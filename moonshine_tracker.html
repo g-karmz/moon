@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moonshine Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f5f3;
+  --surface: #ffffff;
+  --border: #e4e4e0;
+  --border-strong: #c8c8c4;
+  --text: #1a1a18;
+  --text-2: #6b6b68;
+  --text-3: #a0a09c;
+  --bronze: #b45309;
+  --bronze-bg: #fef3c7;
+  --silver: #4b5563;
+  --silver-bg: #f3f4f6;
+  --gold: #92400e;
+  --gold-bg: #fef9c3;
+  --accent: #2563eb;
+  --success: #15803d;
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+body { font-family:'Inter',-apple-system,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; font-size:14px; line-height:1.5; }
+
+.topbar { background:var(--surface); border-bottom:1px solid var(--border); padding:0 24px; display:flex; align-items:center; justify-content:space-between; height:56px; position:sticky; top:0; z-index:50; }
+.topbar-brand { font-size:15px; font-weight:600; letter-spacing:-0.3px; display:flex; align-items:center; gap:8px; }
+.brand-dot { width:8px; height:8px; border-radius:50%; background:#b45309; }
+.nav { display:flex; gap:4px; }
+.nav-btn { font-family:inherit; font-size:13px; font-weight:500; color:var(--text-2); background:none; border:none; padding:6px 14px; border-radius:var(--radius-sm); cursor:pointer; transition:background 0.12s,color 0.12s; }
+.nav-btn:hover { background:var(--bg); color:var(--text); }
+.nav-btn.active { background:var(--text); color:#fff; }
+
+.content { max-width:900px; margin:0 auto; padding:28px 24px; }
+.page { display:none; }
+.page.active { display:block; }
+
+.card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); }
+
+.btn { font-family:inherit; font-size:13px; font-weight:500; padding:8px 16px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; transition:all 0.12s; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+.btn:hover { background:var(--bg); border-color:var(--border-strong); }
+.btn-primary { background:var(--text); color:#fff; border-color:var(--text); }
+.btn-primary:hover { background:#2a2a28; border-color:#2a2a28; }
+.btn-danger { color:var(--danger); border-color:#fecaca; background:var(--danger-bg); }
+.btn-danger:hover { background:#fee2e2; }
+.btn-sm { padding:5px 10px; font-size:12px; }
+
+select, input[type="text"] { font-family:inherit; font-size:13px; color:var(--text); background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 12px; outline:none; transition:border-color 0.12s,box-shadow 0.12s; -webkit-appearance:none; appearance:none; }
+select:focus, input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
+
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+.stat { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); }
+.stat-label { font-size:11px; font-weight:500; color:var(--text-3); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
+.stat-val { font-size:22px; font-weight:600; letter-spacing:-0.5px; }
+
+.run-types { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:16px; }
+.run-type { padding:14px; border-radius:var(--radius-sm); border:2px solid var(--border); background:var(--surface); cursor:pointer; text-align:center; transition:all 0.12s; font-family:inherit; }
+.run-type .rt-name { font-size:14px; font-weight:600; display:block; margin-bottom:2px; }
+.run-type .rt-val { font-size:12px; color:var(--text-2); display:block; }
+.run-type.bronze.selected { background:#fef3c7; border-color:#b45309; box-shadow:0 0 0 3px rgba(180,83,9,0.12); }
+.run-type.bronze .rt-name { color:#92400e; }
+.run-type.silver.selected { background:#e5e7eb; border-color:#4b5563; box-shadow:0 0 0 3px rgba(75,85,99,0.12); }
+.run-type.silver .rt-name { color:#374151; }
+.run-type.gold.selected { background:#fef9c3; border-color:#ca8a04; box-shadow:0 0 0 3px rgba(202,138,4,0.12); }
+.run-type.gold .rt-name { color:#713f12; }
+
+.roles-row { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:10px; align-items:flex-end; }
+.field { display:flex; flex-direction:column; gap:5px; }
+.field label { font-size:11px; font-weight:600; color:var(--text-2); text-transform:uppercase; letter-spacing:0.4px; }
+.field select { width:100%; }
+
+.section-label { font-size:11px; font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; }
+
+.runs-header { display:grid; grid-template-columns:28px 80px 1fr 1fr 1fr 90px 90px 32px; gap:12px; padding:9px 16px; background:var(--bg); border-bottom:1px solid var(--border); font-size:11px; font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:0.5px; border-radius:var(--radius) var(--radius) 0 0; }
+.run-row { display:grid; grid-template-columns:28px 80px 1fr 1fr 1fr 90px 90px 32px; gap:12px; align-items:center; padding:11px 16px; border-bottom:1px solid var(--border); font-size:13px; transition:background 0.1s; }
+.run-row:last-child { border-bottom:none; }
+.run-row:hover { background:#fafaf8; }
+
+.badge { display:inline-flex; align-items:center; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; }
+.badge-bronze { background:var(--bronze-bg); color:var(--bronze); }
+.badge-silver { background:var(--silver-bg); color:var(--silver); }
+.badge-gold { background:var(--gold-bg); color:var(--gold); }
+
+.run-net { font-weight:500; color:var(--success); }
+.run-num { color:var(--text-3); font-size:12px; }
+
+.icon-btn { background:none; border:none; cursor:pointer; color:var(--text-3); width:28px; height:28px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:16px; transition:all 0.1s; font-family:inherit; }
+.icon-btn:hover { background:var(--danger-bg); color:var(--danger); }
+
+.payouts-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:12px; }
+.payout-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow); }
+.payout-name { font-size:11px; font-weight:500; color:var(--text-2); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.4px; }
+.payout-amount { font-size:24px; font-weight:600; letter-spacing:-0.5px; }
+.payout-amount.zero { color:var(--text-3); font-size:18px; }
+.payout-runs { font-size:12px; color:var(--text-3); margin-top:4px; }
+
+.history-list { display:flex; flex-direction:column; gap:8px; }
+.week-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+.week-card-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; cursor:pointer; transition:background 0.1s; }
+.week-card-header:hover { background:#fafaf8; }
+.week-title { font-weight:600; font-size:15px; }
+.week-meta { display:flex; gap:20px; align-items:center; }
+.week-meta span { font-size:13px; color:var(--text-2); }
+.week-meta strong { color:var(--text); font-weight:600; }
+.chevron { color:var(--text-3); font-size:11px; transition:transform 0.2s; }
+.week-card.open .chevron { transform:rotate(180deg); }
+.week-card-body { display:none; padding:20px; border-top:1px solid var(--border); background:#fafaf8; }
+.week-card.open .week-card-body { display:block; }
+.history-payouts { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:8px; margin-bottom:16px; }
+.hp-item { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 12px; }
+.hp-name { font-size:11px; color:var(--text-3); text-transform:uppercase; letter-spacing:0.4px; margin-bottom:3px; }
+.hp-amt { font-size:16px; font-weight:600; }
+
+.names-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:8px; margin-bottom:16px; }
+.name-row { display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 10px; transition:border-color 0.12s,box-shadow 0.12s; }
+.name-row:focus-within { border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
+.name-row input { flex:1; border:none; background:transparent; padding:0; font-size:14px; font-weight:500; outline:none; color:var(--text); font-family:inherit; }
+
+.week-bar { display:flex; align-items:center; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+.week-bar-label { font-size:13px; font-weight:500; color:var(--text-2); }
+
+.empty { text-align:center; padding:40px; color:var(--text-3); font-size:13px; }
+
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:200; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--surface); border-radius:var(--radius); padding:28px; max-width:380px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.15); }
+.modal h3 { font-size:17px; font-weight:600; margin-bottom:8px; }
+.modal p { font-size:14px; color:var(--text-2); line-height:1.6; margin-bottom:24px; }
+.modal-btns { display:flex; gap:8px; justify-content:flex-end; }
+
+.toast { position:fixed; bottom:24px; right:24px; background:var(--text); color:#fff; padding:10px 16px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; transform:translateY(60px); opacity:0; transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1); z-index:9998; pointer-events:none; }
+.toast.show { transform:translateY(0); opacity:1; }
+
+@media(max-width:640px){
+  .stats{grid-template-columns:repeat(2,1fr);}
+  .roles-row{grid-template-columns:1fr 1fr;}
+  .roles-row .btn{grid-column:1/-1;}
+  .runs-header,.run-row{grid-template-columns:24px 70px 1fr 80px 80px 28px;}
+  .runs-header span:nth-child(3),.runs-header span:nth-child(4),.run-row span:nth-child(4),.run-row span:nth-child(5){display:none;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-dot"></div>
+    Moonshine Tracker
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="switchTab('runs',this)">This Week</button>
+    <button class="nav-btn" onclick="switchTab('payouts',this)">Payouts</button>
+    <button class="nav-btn" onclick="switchTab('history',this)">History</button>
+    <button class="nav-btn" onclick="switchTab('names',this)">Names</button>
+  </nav>
+  <button class="btn btn-sm" onclick="exportData()">Export</button>
+</div>
+
+<div class="content">
+
+  <!-- THIS WEEK -->
+  <div class="page active" id="page-runs">
+    <div class="week-bar">
+      <span class="week-bar-label">Week</span>
+      <select id="week-select" onchange="onWeekChange()" style="min-width:160px"></select>
+      <button class="btn" onclick="newWeek()">+ New week</button>
+      <button class="btn" onclick="confirmClear()">Clear</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Delete week</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="stat-label">Runs</div><div class="stat-val" id="s-runs">0</div></div>
+      <div class="stat"><div class="stat-label">Gross</div><div class="stat-val" id="s-gross">$0</div></div>
+      <div class="stat"><div class="stat-label">Fees</div><div class="stat-val" id="s-fees">$0</div></div>
+      <div class="stat"><div class="stat-label">Net to split</div><div class="stat-val" id="s-net">$0</div></div>
+    </div>
+
+    <div class="card" style="padding:20px;margin-bottom:16px;">
+      <div class="section-label">Log a run</div>
+      <div class="run-types">
+        <button class="run-type bronze selected" onclick="selType('bronze',this)">
+          <span class="rt-name">Bronze</span><span class="rt-val">$25,000</span>
+        </button>
+        <button class="run-type silver" onclick="selType('silver',this)">
+          <span class="rt-name">Silver</span><span class="rt-val">$26,250</span>
+        </button>
+        <button class="run-type gold" onclick="selType('gold',this)">
+          <span class="rt-name">Gold</span><span class="rt-val">$28,750</span>
+        </button>
+      </div>
+      <div class="roles-row">
+        <div class="field"><label>Farmer</label><select id="sel-f"></select></div>
+        <div class="field"><label>Cook</label><select id="sel-c"></select></div>
+        <div class="field"><label>Runner</label><select id="sel-r"></select></div>
+        <button class="btn btn-primary" onclick="addRun()">Add run</button>
+      </div>
+    </div>
+
+    <div class="card" style="overflow:hidden;">
+      <div class="runs-header">
+        <span>#</span><span>Type</span><span>Farmer</span><span>Cook</span><span>Runner</span><span>Total</span><span>Per role</span><span></span>
+      </div>
+      <div id="runs-list"></div>
+    </div>
+  </div>
+
+  <!-- PAYOUTS -->
+  <div class="page" id="page-payouts">
+    <div class="week-bar">
+      <span class="week-bar-label">Week</span>
+      <select id="week-select-p" onchange="onPayWeekChange()" style="min-width:160px"></select>
+    </div>
+    <div class="section-label">Payouts</div>
+    <div class="payouts-grid" id="payouts-grid"></div>
+    <p style="margin-top:16px;font-size:13px;color:var(--text-2)" id="payout-total"></p>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="page" id="page-history">
+    <div class="history-list" id="history-list"></div>
+  </div>
+
+  <!-- NAMES -->
+  <div class="page" id="page-names">
+    <div class="card" style="padding:20px;">
+      <div class="section-label">Crew</div>
+      <div class="names-grid" id="names-grid"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn" onclick="addName()">+ Add person</button>
+        <button class="btn btn-primary" onclick="saveNames()">Save changes</button>
+      </div>
+      <p style="font-size:12px;color:var(--text-3);margin-top:10px;">Changes apply to new runs only.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="m-title"></h3>
+    <p id="m-body"></p>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" id="m-ok">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TYPES = {
+  bronze:{label:'Bronze',total:25000},
+  silver:{label:'Silver',total:26250},
+  gold:{label:'Gold',total:28750}
+};
+const FEE = 2500;
+let curType = 'bronze';
+
+let S = (() => {
+  try { const r=localStorage.getItem('ms3'); if(r) return JSON.parse(r); } catch(e){}
+  const id='w_'+Date.now();
+  return {
+    names:['Chenai','Eva','Roy','Teddy','Dante','Lisa','Phoebe','Maria','Biggie','ZenZen','Zero'],
+    weeks:{[id]:{label:wkLabel(),runs:[]}},
+    order:[id]
+  };
+})();
+
+let curW = S.order[S.order.length-1];
+let payW = curW;
+
+function save(){ localStorage.setItem('ms3',JSON.stringify(S)); }
+function fmt(n){ return '$'+Math.ceil(n).toLocaleString(); }
+function wkLabel(d){
+  const dt=d?new Date(d):new Date();
+  const s=new Date(dt); s.setDate(dt.getDate()-dt.getDay()+1);
+  return s.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+}
+
+function init(){
+  buildSelects(); buildRoles(); renderRuns(); renderPayouts(); renderHistory(); renderNames();
+}
+
+function buildSelects(){
+  ['week-select','week-select-p'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.innerHTML=S.order.slice().reverse().map(w=>`<option value="${w}">${S.weeks[w].label}</option>`).join('');
+  });
+  document.getElementById('week-select').value=curW;
+  document.getElementById('week-select-p').value=payW;
+}
+
+function buildRoles(){
+  ['sel-f','sel-c','sel-r'].forEach((id,i)=>{
+    const el=document.getElementById(id), prev=el.value;
+    el.innerHTML=S.names.map(n=>`<option value="${n}">${n}</option>`).join('');
+    el.value=(prev&&S.names.includes(prev))?prev:(S.names[i]||S.names[0]);
+  });
+}
+
+function selType(t,el){
+  curType=t;
+  document.querySelectorAll('.run-type').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function addRun(){
+  const f=document.getElementById('sel-f').value;
+  const c=document.getElementById('sel-c').value;
+  const r=document.getElementById('sel-r').value;
+  if(!f||!c||!r){toast('Select all three roles');return;}
+  S.weeks[curW].runs.push({id:Date.now(),type:curType,farmer:f,cook:c,runner:r,total:TYPES[curType].total,fee:FEE});
+  save(); renderRuns(); renderPayouts(); toast('Run logged');
+}
+
+function renderRuns(){
+  const runs=S.weeks[curW]?.runs||[];
+  const gross=runs.reduce((s,r)=>s+r.total,0);
+  const fees=runs.reduce((s,r)=>s+r.fee,0);
+  document.getElementById('s-runs').textContent=runs.length;
+  document.getElementById('s-gross').textContent=fmt(gross);
+  document.getElementById('s-fees').textContent=fmt(fees);
+  document.getElementById('s-net').textContent=fmt(gross-fees);
+  const list=document.getElementById('runs-list');
+  if(!runs.length){list.innerHTML='<div class="empty">No runs logged yet</div>';return;}
+  list.innerHTML=runs.map((r,i)=>{
+    const net=(r.total-r.fee)/3;
+    return `<div class="run-row">
+      <span class="run-num">${i+1}</span>
+      <span><span class="badge badge-${r.type}">${TYPES[r.type].label}</span></span>
+      <span>${r.farmer}</span><span>${r.cook}</span><span>${r.runner}</span>
+      <span style="font-weight:600">${fmt(r.total)}</span>
+      <span class="run-net">${fmt(net)}</span>
+      <button class="icon-btn" onclick="delRun(${r.id})">×</button>
+    </div>`;
+  }).join('');
+}
+
+function delRun(id){
+  S.weeks[curW].runs=S.weeks[curW].runs.filter(r=>r.id!==id);
+  save(); renderRuns(); renderPayouts(); toast('Run removed');
+}
+
+function calcPay(wid){
+  const runs=S.weeks[wid]?.runs||[], pay={}, cnt={};
+  S.names.forEach(n=>{pay[n]=0;cnt[n]=0;});
+  runs.forEach(r=>{
+    const net=(r.total-r.fee)/3;
+    [r.farmer,r.cook,r.runner].forEach(n=>{
+      if(pay[n]===undefined){pay[n]=0;cnt[n]=0;}
+      pay[n]+=net; cnt[n]++;
+    });
+  });
+  Object.keys(pay).forEach(n=>pay[n]=Math.ceil(pay[n]));
+  return {pay,cnt};
+}
+
+function renderPayouts(){
+  const {pay,cnt}=calcPay(payW);
+  const sorted=Object.entries(pay).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('payouts-grid').innerHTML=sorted.map(([n,v])=>`
+    <div class="payout-card">
+      <div class="payout-name">${n}</div>
+      <div class="payout-amount${v===0?' zero':''}">${fmt(v)}</div>
+      <div class="payout-runs">${cnt[n]||0} run${(cnt[n]||0)!==1?'s':''}</div>
+    </div>`).join('');
+  document.getElementById('payout-total').textContent='Total: '+fmt(sorted.reduce((s,[,v])=>s+v,0));
+}
+
+function renderHistory(){
+  const el=document.getElementById('history-list');
+  if(!S.order.length){el.innerHTML='<div class="empty">No weeks recorded</div>';return;}
+  el.innerHTML=S.order.slice().reverse().map(wid=>{
+    const w=S.weeks[wid];
+    const gross=w.runs.reduce((s,r)=>s+r.total,0);
+    const fees=w.runs.reduce((s,r)=>s+r.fee,0);
+    const {pay}=calcPay(wid);
+    const top=Object.entries(pay).sort((a,b)=>b[1]-a[1])[0];
+    const earners=Object.entries(pay).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+    return `<div class="week-card" id="hc-${wid}">
+      <div class="week-card-header" onclick="toggleCard('${wid}')">
+        <div class="week-title">Week of ${w.label}</div>
+        <div class="week-meta">
+          <span><strong>${w.runs.length}</strong> runs</span>
+          <span>Net <strong>${fmt(gross-fees)}</strong></span>
+          ${top&&top[1]>0?`<span>Top: <strong>${top[0]}</strong></span>`:''}
+          <span class="chevron">▼</span>
+        </div>
+      </div>
+      <div class="week-card-body">
+        ${earners.length?`<div class="history-payouts">${earners.map(([n,v])=>`<div class="hp-item"><div class="hp-name">${n}</div><div class="hp-amt">${fmt(v)}</div></div>`).join('')}</div>`:'<p style="color:var(--text-3);font-size:13px;margin-bottom:12px">No runs</p>'}
+        <button class="btn btn-danger btn-sm" onclick="confirmDelSpecific('${wid}')">Delete week</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleCard(wid){ document.getElementById('hc-'+wid).classList.toggle('open'); }
+
+function renderNames(){
+  document.getElementById('names-grid').innerHTML=S.names.map((n,i)=>`
+    <div class="name-row">
+      <input type="text" value="${n}" id="ni-${i}" placeholder="Name">
+      <button class="icon-btn" onclick="removeName(${i})">×</button>
+    </div>`).join('');
+}
+
+function addName(){
+  S.names.push('');
+  renderNames();
+  setTimeout(()=>{const els=document.querySelectorAll('[id^="ni-"]');if(els.length)els[els.length-1].focus();},40);
+}
+
+function removeName(i){ S.names.splice(i,1); renderNames(); }
+
+function saveNames(){
+  S.names=Array.from(document.querySelectorAll('[id^="ni-"]')).map(el=>el.value.trim()).filter(Boolean);
+  save(); buildRoles(); renderNames(); renderPayouts(); toast('Names saved');
+}
+
+function newWeek(){
+  const id='w_'+Date.now();
+  S.weeks[id]={label:wkLabel(),runs:[]}; S.order.push(id); curW=id; payW=id;
+  save(); buildSelects(); renderRuns(); renderPayouts(); renderHistory(); toast('New week started');
+}
+
+function onWeekChange(){ curW=document.getElementById('week-select').value; renderRuns(); }
+function onPayWeekChange(){ payW=document.getElementById('week-select-p').value; renderPayouts(); }
+
+function confirmClear(){
+  openModal('Clear week',`Remove all runs from "${S.weeks[curW]?.label}"?`,()=>{
+    S.weeks[curW].runs=[]; save(); renderRuns(); renderPayouts(); closeModal(); toast('Week cleared');
+  });
+}
+function confirmDelete(){
+  if(S.order.length<=1){toast('Cannot delete the only week');return;}
+  confirmDelSpecific(curW);
+}
+function confirmDelSpecific(wid){
+  openModal('Delete week',`Permanently delete "${S.weeks[wid]?.label}" and all its runs?`,()=>{
+    S.order=S.order.filter(id=>id!==wid); delete S.weeks[wid];
+    if(!S.weeks[curW]){curW=S.order[S.order.length-1];payW=curW;}
+    save(); buildSelects(); renderRuns(); renderPayouts(); renderHistory(); closeModal(); toast('Week deleted');
+  });
+}
+
+function openModal(title,body,fn){
+  document.getElementById('m-title').textContent=title;
+  document.getElementById('m-body').textContent=body;
+  document.getElementById('m-ok').onclick=fn;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(){ document.getElementById('modal').classList.remove('open'); }
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+
+function switchTab(tab,btn){
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('page-'+tab).classList.add('active');
+  if(tab==='payouts'){document.getElementById('week-select-p').value=payW;renderPayouts();}
+  if(tab==='history') renderHistory();
+  if(tab==='names') renderNames();
+}
+
+function exportData(){
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='moonshine_backup.json'; a.click(); toast('Exported');
+}
+
+function toast(msg){
+  const el=document.getElementById('toast'); el.textContent=msg;
+  el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2200);
+}
+
+init();
+</script>
+</body>
+</html>
